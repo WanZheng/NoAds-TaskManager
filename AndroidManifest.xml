@@ -14,5 +14,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".TaskKiller"
+                  android:label="@string/app_name" />
+
     </application>
 </manifest>

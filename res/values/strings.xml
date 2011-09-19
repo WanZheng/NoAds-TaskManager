@@ -2,4 +2,5 @@
 <resources>
     <string name="hello">Hello World, TaskManagerActivity!</string>
     <string name="app_name">task-manager</string>
+    <string name="kill_task">kill</string>
 </resources>
