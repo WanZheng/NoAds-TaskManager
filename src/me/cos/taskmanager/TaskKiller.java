@@ -5,9 +5,11 @@ import java.util.Iterator;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.AttributeSet;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
@@ -73,16 +75,16 @@ public class TaskKiller extends Activity {
 	    super(context, android.R.layout.simple_list_item_multiple_choice);
 	}
 
-	// @Override public View getView(int position, View convertView, ViewGroup parent) {
-	//     String packageName = (String) getItem(position);
-	//     TextView view = (TextView) convertView;
+	@Override public View getView(int position, View convertView, ViewGroup parent) {
+	    String packageName = (String) getItem(position);
+	    MyTaskItemView view = (MyTaskItemView) convertView;
 
-	//     if (view == null) {
-	// 	view = new TextView(TaskKiller.this);
-	//     }
-	//     view.setText(packageName);
+	    if (view == null) {
+		view = (MyTaskItemView) getLayoutInflater().inflate(R.layout.task_item, parent, false); /* XXX: do not attach to root */
+	    }
+	    view.setText(packageName);
 
-	//     return view;
-	// }
+	    return view;
+	}
     }
 }
