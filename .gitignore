@@ -1,0 +1,9 @@
+*.swp
+*~
+\#*\#
+.\#*
+cscope.out
+bin/
+gen/
+obj/
+libs/
