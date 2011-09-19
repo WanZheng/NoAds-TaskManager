@@ -1,6 +1,6 @@
 PACKAGE=me.cos.taskmanager
-ACTIVITY=TaskManagerActivity
-PROJECT=TaskManagerActivity
+ACTIVITY=Dashboard
+PROJECT=TaskManager
 DEVICE=EMU_5556
 
 include makefile.inc
