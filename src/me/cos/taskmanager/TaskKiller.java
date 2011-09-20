@@ -1,6 +1,7 @@
 package me.cos.taskmanager;
 
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Iterator;
 
 import android.app.Activity;
@@ -19,6 +20,7 @@ public class TaskKiller extends Activity {
     private ActivityManager mActivityManager;
     private ListView mListView;
     private MyListAdapter mAdapter;
+    private List<RunningAppProcessInfo> mKillList = new LinkedList<RunningAppProcessInfo>();
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,16 +56,26 @@ public class TaskKiller extends Activity {
     }
 
     public void onKill(View view) {
+	mKillList.clear();
+
 	SparseBooleanArray checkedPositions = mListView.getCheckedItemPositions();
 	for (int i=0; i<checkedPositions.size(); i++) {
 	    if (checkedPositions.valueAt(i)) {
 		RunningAppProcessInfo info = (RunningAppProcessInfo) mAdapter.getItem(checkedPositions.keyAt(i));
-		Log.d(Config.TAG, "kill " + info.processName);
-		mActivityManager.killBackgroundProcesses(info.processName);
+		mKillList.add(info);
 	    }
 	}
-    	
-    	refresh();
+
+	doKill();
+    }
+
+    private void doKill() {
+	for (RunningAppProcessInfo info : mKillList) {
+		Log.d(Config.TAG, "kill " + info.processName);
+		mActivityManager.killBackgroundProcesses(info.processName);
+	}
+
+	refresh(); // TODO
     }
 
     private class MyListAdapter extends ArrayAdapter<RunningAppProcessInfo> {
