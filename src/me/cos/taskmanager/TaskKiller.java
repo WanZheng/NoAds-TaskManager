@@ -5,12 +5,9 @@ import java.util.Iterator;
 
 import android.app.Activity;
 import android.content.Context;
-import android.util.AttributeSet;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
 import android.app.ActivityManager;
@@ -48,8 +45,7 @@ public class TaskKiller extends Activity {
 	List<RunningAppProcessInfo> procList = mActivityManager.getRunningAppProcesses();
         
     	for (Iterator<RunningAppProcessInfo> iterator = procList.iterator(); iterator.hasNext();) {
-    		RunningAppProcessInfo procInfo = iterator.next();
-    		mAdapter.add(procInfo.processName);
+    		mAdapter.add(iterator.next());
     	}
 
 	mAdapter.notifyDataSetChanged();
@@ -61,28 +57,28 @@ public class TaskKiller extends Activity {
 	SparseBooleanArray checkedPositions = mListView.getCheckedItemPositions();
 	for (int i=0; i<checkedPositions.size(); i++) {
 	    if (checkedPositions.valueAt(i)) {
-		String processName = (String) mAdapter.getItem(checkedPositions.keyAt(i));
-		Log.d(Config.TAG, "kill " + processName);
-		mActivityManager.killBackgroundProcesses(processName);
+		RunningAppProcessInfo info = (RunningAppProcessInfo) mAdapter.getItem(checkedPositions.keyAt(i));
+		Log.d(Config.TAG, "kill " + info.processName);
+		mActivityManager.killBackgroundProcesses(info.processName);
 	    }
 	}
     	
     	refresh();
     }
 
-    private class MyListAdapter extends ArrayAdapter<String> {
+    private class MyListAdapter extends ArrayAdapter<RunningAppProcessInfo> {
 	public MyListAdapter(Context context) {
 	    super(context, android.R.layout.simple_list_item_multiple_choice);
 	}
 
 	@Override public View getView(int position, View convertView, ViewGroup parent) {
-	    String packageName = (String) getItem(position);
+	    RunningAppProcessInfo info = (RunningAppProcessInfo) getItem(position);
 	    MyTaskItemView view = (MyTaskItemView) convertView;
 
 	    if (view == null) {
 		view = (MyTaskItemView) getLayoutInflater().inflate(R.layout.task_item, parent, false); /* XXX: do not attach to root */
 	    }
-	    view.setText(packageName);
+	    view.setText(info.processName);
 
 	    return view;
 	}
