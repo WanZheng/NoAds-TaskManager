@@ -1,11 +1,12 @@
 package me.cos.taskmanager;
 
 import java.util.List;
-import java.util.LinkedList;
-import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Handler;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,7 +21,8 @@ public class TaskKiller extends Activity {
     private ActivityManager mActivityManager;
     private ListView mListView;
     private MyListAdapter mAdapter;
-    private List<RunningAppProcessInfo> mKillList = new LinkedList<RunningAppProcessInfo>();
+    private Set<RunningAppProcessInfo> mKillList = new HashSet<RunningAppProcessInfo>();
+    private Handler mHandler = new Handler();
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,23 +48,38 @@ public class TaskKiller extends Activity {
 
 	List<RunningAppProcessInfo> procList = mActivityManager.getRunningAppProcesses();
         
-    	for (Iterator<RunningAppProcessInfo> iterator = procList.iterator(); iterator.hasNext();) {
-    		mAdapter.add(iterator.next());
+	for (RunningAppProcessInfo info : procList) {
+    		mAdapter.add(info);
     	}
 
 	mAdapter.notifyDataSetChanged();
-	// TODO:
+
 	mListView.clearChoices();
+	int count = mAdapter.getCount();
+	for (int i=0; i<count; i++) {
+	    RunningAppProcessInfo item = mAdapter.getItem(i);
+	    for (RunningAppProcessInfo info : mKillList) {
+		if (item.processName.equals(info.processName)) {
+		    Log.d(Config.TAG, "select " + info.processName + " at " + i);
+		    break;
+		}
+	    }
+	}
     }
 
     public void onKill(View view) {
-	mKillList.clear();
-
 	SparseBooleanArray checkedPositions = mListView.getCheckedItemPositions();
 	for (int i=0; i<checkedPositions.size(); i++) {
+	    RunningAppProcessInfo item = (RunningAppProcessInfo) mAdapter.getItem(checkedPositions.keyAt(i));
 	    if (checkedPositions.valueAt(i)) {
-		RunningAppProcessInfo info = (RunningAppProcessInfo) mAdapter.getItem(checkedPositions.keyAt(i));
-		mKillList.add(info);
+		mKillList.add(item);
+	    }else{
+		for (RunningAppProcessInfo info : mKillList) {
+		    if (info.processName.equals(item.processName)) {
+			mKillList.remove(info);
+			break;
+		    }
+		}
 	    }
 	}
 
@@ -75,7 +92,11 @@ public class TaskKiller extends Activity {
 		mActivityManager.killBackgroundProcesses(info.processName);
 	}
 
-	refresh(); // TODO
+	mHandler.post(new Runnable() {
+		@Override public void run() {
+		    refresh();
+		}
+	    });
     }
 
     private class MyListAdapter extends ArrayAdapter<RunningAppProcessInfo> {
