@@ -7,7 +7,7 @@ V880=Blade-CM7-Harley
 G2D=0A3AAA1E0200E01F
 
 
-all:	log
+all:
 
 _DEVICE=${${DEVICE}}
 
@@ -22,11 +22,16 @@ bin/${APK}:	force
 install:	bin/${APK}
 	${ADB} install -r $<
 
-run:	install
+run:	
 	${ADB} logcat -c # clear the logs
 	${ADB} shell am start -n ${PACKAGE}/.${ACTIVITY}
 
-log:	run
+log:	
 	${ADB} logcat -s ${TAGS}
+
+all:
+	make install
+	make run
+	make log
 
 force:
