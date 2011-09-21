@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Bundle;
 import android.view.View;
@@ -17,6 +18,7 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.util.Log;
 import android.util.SparseBooleanArray;
+import android.content.SharedPreferences;
 
 public class TaskKiller extends Activity {
     private ActivityManager mActivityManager;
@@ -24,10 +26,16 @@ public class TaskKiller extends Activity {
     private MyListAdapter mAdapter;
     private Map<String, RunningAppProcessInfo> mKillList = new HashMap<String, RunningAppProcessInfo>();
     private Handler mHandler = new Handler();
+    private SharedPreferences mPreferences;
+
+    public static final String PREFERENCE_NAME = "me.cos.taskmanager";
+    public static final String PREFERENCE_KILLLIST = "kill_list";
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.task_killer);
+
+	mPreferences = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE);
 
 	mAdapter = new MyListAdapter(this);
 
@@ -48,6 +56,8 @@ public class TaskKiller extends Activity {
 	// 	}
 	//     });
 	mListView.setAdapter(mAdapter);
+
+	startService(new Intent(this, KillerService.class));
     }
 
     @Override protected void onResume() {
@@ -95,10 +105,13 @@ public class TaskKiller extends Activity {
     }
 
     private void doKill() {
+	String killListString = "";
 	for (String processName : mKillList.keySet()) {
 	    Log.d(Config.TAG, "kill " + processName);
 	    mActivityManager.killBackgroundProcesses(processName);
+	    killListString += processName + ":";
 	}
+	mPreferences.edit().putString(PREFERENCE_KILLLIST, killListString).commit();
 
 	mHandler.post(new Runnable() {
 		@Override public void run() {
