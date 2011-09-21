@@ -1,8 +1,8 @@
 package me.cos.taskmanager;
 
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 
 import android.app.Activity;
 import android.content.Context;
@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
@@ -21,7 +22,7 @@ public class TaskKiller extends Activity {
     private ActivityManager mActivityManager;
     private ListView mListView;
     private MyListAdapter mAdapter;
-    private Set<RunningAppProcessInfo> mKillList = new HashSet<RunningAppProcessInfo>();
+    private Map<String, RunningAppProcessInfo> mKillList = new HashMap<String, RunningAppProcessInfo>();
     private Handler mHandler = new Handler();
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +34,19 @@ public class TaskKiller extends Activity {
 	mListView = (ListView) findViewById(R.id.list);
 	mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 	// XXX: mListView.setItemsCanFocus(false);
+
+	// TODO: require Android 3.0
+	// mListView.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+	// 	void onItemCheckedStateChanged(ActionMode mode, int position, long id, boolean checked) {
+	// 	    RunningAppProcessInfo item = mAdapter.getItem(position);
+	// 	    for (RunningAppProcessInfo info : mKillList) {
+	// 		if (info.processName.equals(item.processName)) {
+	// 		    mKillList.remove(info);
+	// 		    break;
+	// 		}
+	// 	    }
+	// 	}
+	//     });
 	mListView.setAdapter(mAdapter);
     }
 
@@ -58,11 +72,9 @@ public class TaskKiller extends Activity {
 	int count = mAdapter.getCount();
 	for (int i=0; i<count; i++) {
 	    RunningAppProcessInfo item = mAdapter.getItem(i);
-	    for (RunningAppProcessInfo info : mKillList) {
-		if (item.processName.equals(info.processName)) {
-		    Log.d(Config.TAG, "select " + info.processName + " at " + i);
-		    break;
-		}
+	    if (mKillList.containsKey(item.processName)) {
+		Log.d(Config.TAG, "select " + item.processName + " at " + i);
+		mListView.setItemChecked(i, true);
 	    }
 	}
     }
@@ -72,14 +84,10 @@ public class TaskKiller extends Activity {
 	for (int i=0; i<checkedPositions.size(); i++) {
 	    RunningAppProcessInfo item = (RunningAppProcessInfo) mAdapter.getItem(checkedPositions.keyAt(i));
 	    if (checkedPositions.valueAt(i)) {
-		mKillList.add(item);
+		mKillList.put(item.processName, item);
 	    }else{
-		for (RunningAppProcessInfo info : mKillList) {
-		    if (info.processName.equals(item.processName)) {
-			mKillList.remove(info);
-			break;
-		    }
-		}
+		Log.d(Config.TAG, "Need to remove " + item.processName);
+		mKillList.remove(item.processName);
 	    }
 	}
 
@@ -87,9 +95,9 @@ public class TaskKiller extends Activity {
     }
 
     private void doKill() {
-	for (RunningAppProcessInfo info : mKillList) {
-		Log.d(Config.TAG, "kill " + info.processName);
-		mActivityManager.killBackgroundProcesses(info.processName);
+	for (String processName : mKillList.keySet()) {
+	    Log.d(Config.TAG, "kill " + processName);
+	    mActivityManager.killBackgroundProcesses(processName);
 	}
 
 	mHandler.post(new Runnable() {
