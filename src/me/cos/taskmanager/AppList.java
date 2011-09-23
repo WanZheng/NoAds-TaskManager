@@ -16,15 +16,18 @@ import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ApplicationInfo;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.content.SharedPreferences;
 
 public class AppList extends Activity {
     private ActivityManager mActivityManager;
+    private PackageManager mPackageManager;
     private ListView mListView;
     private MyListAdapter mAdapter;
-    private Map<String, RunningAppProcessInfo> mKillList = new HashMap<String, RunningAppProcessInfo>();
+    private Map<String, ApplicationInfo> mKillList = new HashMap<String, ApplicationInfo>();
     private Handler mHandler = new Handler();
     private SharedPreferences mPreferences;
 
@@ -64,6 +67,7 @@ public class AppList extends Activity {
 	super.onResume();
 
 	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+	mPackageManager = getPackageManager();
 	refresh();
     }
 
@@ -73,7 +77,15 @@ public class AppList extends Activity {
 	List<RunningAppProcessInfo> procList = mActivityManager.getRunningAppProcesses();
         
 	for (RunningAppProcessInfo info : procList) {
-    		mAdapter.add(info);
+	    for (String pkgName: info.pkgList) {
+		if (! mAdapter.hasPackage(pkgName)) {
+		    try {
+			mAdapter.add(mPackageManager.getApplicationInfo(pkgName, PackageManager.GET_UNINSTALLED_PACKAGES));
+		    } catch (PackageManager.NameNotFoundException e) {
+			Log.d(Config.TAG, e + pkgName);
+		    }
+		}
+	    }
     	}
 
 	mAdapter.notifyDataSetChanged();
@@ -81,9 +93,9 @@ public class AppList extends Activity {
 	mListView.clearChoices();
 	int count = mAdapter.getCount();
 	for (int i=0; i<count; i++) {
-	    RunningAppProcessInfo item = mAdapter.getItem(i);
-	    if (mKillList.containsKey(item.processName)) {
-		Log.d(Config.TAG, "select " + item.processName + " at " + i);
+	    ApplicationInfo item = mAdapter.getItem(i);
+	    if (mKillList.containsKey(item.packageName)) {
+		Log.d(Config.TAG, "select " + item.packageName + " at " + i);
 		mListView.setItemChecked(i, true);
 	    }
 	}
@@ -92,12 +104,12 @@ public class AppList extends Activity {
     public void onKill(View view) {
 	SparseBooleanArray checkedPositions = mListView.getCheckedItemPositions();
 	for (int i=0; i<checkedPositions.size(); i++) {
-	    RunningAppProcessInfo item = (RunningAppProcessInfo) mAdapter.getItem(checkedPositions.keyAt(i));
+	    ApplicationInfo item = (ApplicationInfo) mAdapter.getItem(checkedPositions.keyAt(i));
 	    if (checkedPositions.valueAt(i)) {
-		mKillList.put(item.processName, item);
+		mKillList.put(item.packageName, item);
 	    }else{
-		Log.d(Config.TAG, "Need to remove " + item.processName);
-		mKillList.remove(item.processName);
+		Log.d(Config.TAG, "Need to remove " + item.packageName);
+		mKillList.remove(item.packageName);
 	    }
 	}
 
@@ -106,10 +118,10 @@ public class AppList extends Activity {
 
     private void doKill() {
 	String killListString = "";
-	for (String processName : mKillList.keySet()) {
-	    Log.d(Config.TAG, "manual kill " + processName);
-	    mActivityManager.killBackgroundProcesses(processName);
-	    killListString += processName + ";";
+	for (String packageName : mKillList.keySet()) {
+	    Log.d(Config.TAG, "manual kill " + packageName);
+	    mActivityManager.killBackgroundProcesses(packageName);
+	    killListString += packageName + ";";
 	}
 	mPreferences.edit().putString(PREFERENCE_KILLLIST, killListString).commit();
 
@@ -120,21 +132,33 @@ public class AppList extends Activity {
 	    });
     }
 
-    private class MyListAdapter extends ArrayAdapter<RunningAppProcessInfo> {
-	public MyListAdapter(Context context) {
-	    super(context, android.R.layout.simple_list_item_multiple_choice);
-	}
+    private class MyListAdapter extends ArrayAdapter<ApplicationInfo> {
+    	public MyListAdapter(Context context) {
+    	    super(context, android.R.layout.simple_list_item_multiple_choice);
+    	}
 
-	@Override public View getView(int position, View convertView, ViewGroup parent) {
-	    RunningAppProcessInfo info = (RunningAppProcessInfo) getItem(position);
-	    AppItemView view = (AppItemView) convertView;
-
-	    if (view == null) {
-		view = (AppItemView) getLayoutInflater().inflate(R.layout.app_item, parent, false); /* XXX: do not attach to root */
+    	public boolean hasPackage(String packageName) {
+	    int count = getCount();
+	    for (int i=0; i<count; i++) {
+		ApplicationInfo item = (ApplicationInfo) getItem(i);
+		if (item.packageName.equals(packageName)) {
+		    return true;
+		}
 	    }
-	    view.setText(info.processName);
+	    return false;
+    	}
 
-	    return view;
-	}
+    	@Override public View getView(int position, View convertView, ViewGroup parent) {
+    	    ApplicationInfo item = (ApplicationInfo) getItem(position);
+    	    AppItemView view = (AppItemView) convertView;
+
+    	    if (view == null) {
+    		view = (AppItemView) getLayoutInflater().inflate(R.layout.app_item, parent, false); /* XXX: do not attach to root */
+    	    }
+	    CharSequence label = item.loadLabel(mPackageManager);
+    	    view.setText(label);
+
+    	    return view;
+    	}
     }
 }

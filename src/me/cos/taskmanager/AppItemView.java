@@ -17,6 +17,10 @@ public class AppItemView extends LinearLayout implements Checkable {
 	((TextView) findViewById(R.id.text)).setText(text);
     }
 
+    public void setText(CharSequence text) {
+	((TextView) findViewById(R.id.text)).setText(text);
+    }
+
     @Override public void setChecked(boolean checked) {
 	mChecked = checked;
 	((TextView) findViewById(R.id.check)).setText(checked ? "* " : "  ");
