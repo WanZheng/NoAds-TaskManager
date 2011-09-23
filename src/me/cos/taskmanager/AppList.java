@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.text.Collator;
 
 import android.app.Activity;
 import android.content.Context;
@@ -34,6 +35,7 @@ public class AppList extends Activity {
     private ActivityManager mActivityManager;
     private PackageManager mPackageManager;
     private ListView mListView;
+    private ApplicationInfoCache mApplicationInfoCache;
     private MyListAdapter mAdapter;
     private Set<String> mKillList = new HashSet<String>();
     private Set<String> mIgnoreList = new HashSet<String>();
@@ -76,6 +78,7 @@ public class AppList extends Activity {
 
 	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 	mPackageManager = getPackageManager();
+	mApplicationInfoCache = new ApplicationInfoCache(mPackageManager);
 
 	stopService(new Intent(this, KillerService.class));
 
@@ -148,30 +151,23 @@ public class AppList extends Activity {
 		}
 
 		if (! mAdapter.hasPackage(pkgName)) {
-		    try {
-			mAdapter.add(mPackageManager.getApplicationInfo(pkgName, PackageManager.GET_UNINSTALLED_PACKAGES));
-		    } catch (PackageManager.NameNotFoundException e) {
-			Log.d(Config.TAG, e + pkgName);
-		    }
+		    mAdapter.add(pkgName);
 		}
 	    }
     	}
 
-	mAdapter.sort(new ApplicationInfo.DisplayNameComparator(mPackageManager));
+	mAdapter.sort(Collator.getInstance());
 
 	mAdapter.notifyDataSetChanged();
 
 	mListView.clearChoices();
 	int count = mAdapter.getCount();
 	for (int i=0; i<count; i++) {
-	    ApplicationInfo item = mAdapter.getItem(i);
-	    if (mKillList.contains(item.packageName)) {
+	    String item = mAdapter.getItem(i);
+	    if (mKillList.contains(item)) {
 		mListView.setItemChecked(i, true);
 	    }
 	}
-
-	printList("Kill", mKillList);
-	printList("Ingore", mIgnoreList);
     }
 
     private void printList(String title, Collection<String> c) {
@@ -190,11 +186,11 @@ public class AppList extends Activity {
 	SparseBooleanArray checkedPositions = mListView.getCheckedItemPositions();
 
 	for (int i=0; i<checkedPositions.size(); i++) {
-	    ApplicationInfo item = (ApplicationInfo) mAdapter.getItem(checkedPositions.keyAt(i));
+	    String item = mAdapter.getItem(checkedPositions.keyAt(i));
 	    if (checkedPositions.valueAt(i)) {
-		collection.add(item.packageName);
+		collection.add(item);
 	    }else{
-		collection.remove(item.packageName);
+		collection.remove(item);
 	    }
 	}
     }
@@ -235,7 +231,7 @@ public class AppList extends Activity {
 	    });
     }
 
-    private class MyListAdapter extends ArrayAdapter<ApplicationInfo> {
+    private class MyListAdapter extends ArrayAdapter<String> {
     	public MyListAdapter(Context context) {
     	    super(context, android.R.layout.simple_list_item_multiple_choice);
     	}
@@ -243,8 +239,8 @@ public class AppList extends Activity {
     	public boolean hasPackage(String packageName) {
 	    int count = getCount();
 	    for (int i=0; i<count; i++) {
-		ApplicationInfo item = (ApplicationInfo) getItem(i);
-		if (item.packageName.equals(packageName)) {
+		String item = getItem(i);
+		if (item.equals(packageName)) {
 		    return true;
 		}
 	    }
@@ -252,17 +248,22 @@ public class AppList extends Activity {
     	}
 
     	@Override public View getView(int position, View convertView, ViewGroup parent) {
-    	    ApplicationInfo item = (ApplicationInfo) getItem(position);
+    	    ApplicationInfo info = (ApplicationInfo) mApplicationInfoCache.get(getItem(position));
+	    if (info == null) {
+		return null;
+	    }
+
     	    AppItemView view = (AppItemView) convertView;
 
     	    if (view == null) {
     		view = (AppItemView) getLayoutInflater().inflate(R.layout.app_item, parent, false); /* XXX: do not attach to root */
     	    }
-	    CharSequence label = item.loadLabel(mPackageManager);
+	    CharSequence label = info.loadLabel(mPackageManager);
 	    if (label == null) {
+		Log.d(Config.TAG, "can't resolve label for " + info.packageName);
 		view.setText(label);
 	    }else{
-		view.setText(item.packageName);
+		view.setText(info.packageName);
 	    }
 
     	    return view;
