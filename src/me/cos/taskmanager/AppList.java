@@ -19,14 +19,11 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MenuInflater;
-import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.AbsListView;
-import android.widget.ArrayAdapter;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ApplicationInfo;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.content.SharedPreferences;
@@ -35,8 +32,8 @@ public class AppList extends Activity {
     private ActivityManager mActivityManager;
     private PackageManager mPackageManager;
     private ListView mListView;
-    private ApplicationInfoCache mApplicationInfoCache;
-    private MyListAdapter mAdapter;
+    private AppInfoCache mAppInfoCache;
+    private AppInfoAdapter mAdapter;
     private Set<String> mKillList = new HashSet<String>();
     private Set<String> mIgnoreList = new HashSet<String>();
     private Handler mHandler = new Handler();
@@ -51,8 +48,10 @@ public class AppList extends Activity {
         setContentView(R.layout.app_list);
 
 	mPreferences = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE);
-
-	mAdapter = new MyListAdapter(this);
+	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+	mPackageManager = getPackageManager();
+	mAppInfoCache = new AppInfoCache(mPackageManager);
+	mAdapter = new AppInfoAdapter(this, mAppInfoCache);
 
 	mListView = (ListView) findViewById(R.id.list);
 	mListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -75,10 +74,6 @@ public class AppList extends Activity {
 
     @Override protected void onResume() {
 	super.onResume();
-
-	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-	mPackageManager = getPackageManager();
-	mApplicationInfoCache = new ApplicationInfoCache(mPackageManager);
 
 	stopService(new Intent(this, KillerService.class));
 
@@ -229,44 +224,5 @@ public class AppList extends Activity {
 		    refresh();
 		}
 	    });
-    }
-
-    private class MyListAdapter extends ArrayAdapter<String> {
-    	public MyListAdapter(Context context) {
-    	    super(context, android.R.layout.simple_list_item_multiple_choice);
-    	}
-
-    	public boolean hasPackage(String packageName) {
-	    int count = getCount();
-	    for (int i=0; i<count; i++) {
-		String item = getItem(i);
-		if (item.equals(packageName)) {
-		    return true;
-		}
-	    }
-	    return false;
-    	}
-
-    	@Override public View getView(int position, View convertView, ViewGroup parent) {
-    	    ApplicationInfo info = (ApplicationInfo) mApplicationInfoCache.get(getItem(position));
-	    if (info == null) {
-		return null;
-	    }
-
-    	    AppItemView view = (AppItemView) convertView;
-
-    	    if (view == null) {
-    		view = (AppItemView) getLayoutInflater().inflate(R.layout.app_item, parent, false); /* XXX: do not attach to root */
-    	    }
-	    CharSequence label = info.loadLabel(mPackageManager);
-	    if (label == null) {
-		Log.d(Config.TAG, "can't resolve label for " + info.packageName);
-		view.setText(label);
-	    }else{
-		view.setText(info.packageName);
-	    }
-
-    	    return view;
-    	}
     }
 }

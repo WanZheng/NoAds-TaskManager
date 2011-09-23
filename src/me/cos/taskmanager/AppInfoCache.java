@@ -7,15 +7,15 @@ import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.util.Log;
 
-public class ApplicationInfoCache {
+public class AppInfoCache {
     private Map<String, ApplicationInfo> mCache = new HashMap();
     PackageManager mPackageManager;
 
-    public ApplicationInfoCache(PackageManager packageManager) {
+    public AppInfoCache(PackageManager packageManager) {
 	mPackageManager = packageManager;
     }
 
-    public ApplicationInfo get(String packageName) {
+    public ApplicationInfo getInfo(String packageName) {
 	ApplicationInfo info = mCache.get(packageName);
 	if (info == null) {
 	    try {
@@ -28,5 +28,9 @@ public class ApplicationInfoCache {
 	    }
 	}
 	return info;
+    }
+
+    public String getLabel(ApplicationInfo info) {
+	return info.loadLabel(mPackageManager).toString();
     }
 }

@@ -20,7 +20,7 @@ public class KillerService extends Service {
 
     @Override public void onCreate() {
 	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-	mPreferences = getSharedPreferences(AppKiller.PREFERENCE_NAME, Context.MODE_PRIVATE);
+	mPreferences = getSharedPreferences(AppList.PREFERENCE_NAME, Context.MODE_PRIVATE);
     }
 
     @Override public IBinder onBind(Intent intent) {
