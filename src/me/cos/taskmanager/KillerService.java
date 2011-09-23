@@ -54,16 +54,7 @@ public class KillerService extends Service {
     }
 
     private void killApplications() {
-	// level-11
-	// Set<String> killList = mPreferences.getStringSet(AppKiller.PREFERENCE_KILLLIST, null);
-
-	String killListString = mPreferences.getString(AppKiller.PREFERENCE_KILLLIST, "");
-	if (killListString.length() == 0) {
-	    return;
-	}
-	String[] killList = killListString.split(";");
-
-	for (String packageName : killList) {
+	for (String packageName : AppList.restoreStringList(mPreferences, AppList.PREFERENCE_KILLLIST)) {
 	    Log.d(Config.TAG, "auto kill " + packageName);
 	    mActivityManager.killBackgroundProcesses(packageName);
 	}
