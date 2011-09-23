@@ -15,7 +15,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".TaskKiller"
+        <activity android:name=".AppList"
                   android:label="@string/app_name" />
 
 	<service android:name=".KillerService" android:exported="false" />

@@ -18,10 +18,8 @@ public class KillerService extends Service {
     private SharedPreferences mPreferences;
 
     @Override public void onCreate() {
-	Log.d(Config.TAG, "onCreate()");
 	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-	mPreferences = getSharedPreferences(TaskKiller.PREFERENCE_NAME, Context.MODE_PRIVATE);
-	Log.d(Config.TAG, "mPreferences = " + mPreferences);
+	mPreferences = getSharedPreferences(AppKiller.PREFERENCE_NAME, Context.MODE_PRIVATE);
     }
 
     @Override public IBinder onBind(Intent intent) {
@@ -37,27 +35,25 @@ public class KillerService extends Service {
 	// TODO: remove duplicate messages
 	mHandler.postDelayed(new Runnable() {
 		@Override public void run() {
-		    killTasks();
+		    killApplications();
 		    postKillingRequest();
 		}
 	    }, 5000/* TODO */);
     }
 
-    private void killTasks() {
+    private void killApplications() {
 	// level-11
-	// Set<String> killList = mPreferences.getStringSet(TaskKiller.PREFERENCE_KILLLIST, null);
+	// Set<String> killList = mPreferences.getStringSet(AppKiller.PREFERENCE_KILLLIST, null);
 
-	String killListString = mPreferences.getString(TaskKiller.PREFERENCE_KILLLIST, "");
-	Log.d(Config.TAG, "killTasks(): string=" + killListString);
+	String killListString = mPreferences.getString(AppKiller.PREFERENCE_KILLLIST, "");
 	if (killListString.length() == 0) {
 	    return;
 	}
-	String[] killList = killListString.split(":");
-	Log.d(Config.TAG, "killList = " + killList + " " + killList.length);
+	String[] killList = killListString.split(";");
 
-	for (String processName : killList) {
-	    Log.d(Config.TAG, "kill " + processName);
-	    mActivityManager.killBackgroundProcesses(processName);
+	for (String packageName : killList) {
+	    Log.d(Config.TAG, "auto kill " + packageName);
+	    mActivityManager.killBackgroundProcesses(packageName);
 	}
     }
 }

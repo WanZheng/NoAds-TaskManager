@@ -20,7 +20,7 @@ import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.content.SharedPreferences;
 
-public class TaskKiller extends Activity {
+public class AppList extends Activity {
     private ActivityManager mActivityManager;
     private ListView mListView;
     private MyListAdapter mAdapter;
@@ -33,7 +33,7 @@ public class TaskKiller extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.task_killer);
+        setContentView(R.layout.app_killer);
 
 	mPreferences = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE);
 
@@ -107,9 +107,9 @@ public class TaskKiller extends Activity {
     private void doKill() {
 	String killListString = "";
 	for (String processName : mKillList.keySet()) {
-	    Log.d(Config.TAG, "kill " + processName);
+	    Log.d(Config.TAG, "manual kill " + processName);
 	    mActivityManager.killBackgroundProcesses(processName);
-	    killListString += processName + ":";
+	    killListString += processName + ";";
 	}
 	mPreferences.edit().putString(PREFERENCE_KILLLIST, killListString).commit();
 
@@ -127,10 +127,10 @@ public class TaskKiller extends Activity {
 
 	@Override public View getView(int position, View convertView, ViewGroup parent) {
 	    RunningAppProcessInfo info = (RunningAppProcessInfo) getItem(position);
-	    MyTaskItemView view = (MyTaskItemView) convertView;
+	    AppItemView view = (AppItemView) convertView;
 
 	    if (view == null) {
-		view = (MyTaskItemView) getLayoutInflater().inflate(R.layout.task_item, parent, false); /* XXX: do not attach to root */
+		view = (AppItemView) getLayoutInflater().inflate(R.layout.app_item, parent, false); /* XXX: do not attach to root */
 	    }
 	    view.setText(info.processName);
 

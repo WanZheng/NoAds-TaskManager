@@ -34,4 +34,7 @@ all:
 	make run
 	make log
 
+clean:
+	ant clean
+
 force:

@@ -6,10 +6,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Checkable;
 
-public class MyTaskItemView extends LinearLayout implements Checkable {
+public class AppItemView extends LinearLayout implements Checkable {
     private boolean mChecked = false;
 
-    public MyTaskItemView(Context context, AttributeSet attrs) {
+    public AppItemView(Context context, AttributeSet attrs) {
 	super(context, attrs);
     }
 
