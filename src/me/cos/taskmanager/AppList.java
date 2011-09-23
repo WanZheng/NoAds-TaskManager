@@ -88,6 +88,8 @@ public class AppList extends Activity {
 	    }
     	}
 
+	mAdapter.sort(new ApplicationInfo.DisplayNameComparator(mPackageManager));
+
 	mAdapter.notifyDataSetChanged();
 
 	mListView.clearChoices();
