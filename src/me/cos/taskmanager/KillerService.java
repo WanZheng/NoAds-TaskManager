@@ -16,6 +16,7 @@ public class KillerService extends Service {
     private ActivityManager mActivityManager;
     private Handler mHandler = new Handler();
     private SharedPreferences mPreferences;
+    private boolean mStopped = false;
 
     @Override public void onCreate() {
 	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
@@ -28,15 +29,26 @@ public class KillerService extends Service {
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
 	postKillingRequest();
+	mStopped = false;
 	return START_STICKY;
+    }
+
+    @Override public void onDestroy() {
+	super.onDestroy();
+	mStopped = true;
+	Log.d(Config.TAG, "service onDestroy()");
     }
 
     private void postKillingRequest() {
 	// TODO: remove duplicate messages
 	mHandler.postDelayed(new Runnable() {
 		@Override public void run() {
-		    killApplications();
-		    postKillingRequest();
+		    if (! mStopped) {
+			killApplications();
+			postKillingRequest();
+		    }else{
+			Log.d(Config.TAG, "ignore auto kill request");
+		    }
 		}
 	    }, 5000/* TODO */);
     }

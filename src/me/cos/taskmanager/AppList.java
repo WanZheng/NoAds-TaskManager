@@ -59,8 +59,6 @@ public class AppList extends Activity {
 	// 	}
 	//     });
 	mListView.setAdapter(mAdapter);
-
-	startService(new Intent(this, KillerService.class));
     }
 
     @Override protected void onResume() {
@@ -69,6 +67,16 @@ public class AppList extends Activity {
 	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 	mPackageManager = getPackageManager();
 	refresh();
+
+	Log.d(Config.TAG, "stop service");
+	stopService(new Intent(this, KillerService.class));
+    }
+
+    @Override protected void onPause() {
+	super.onPause();
+
+	Log.d(Config.TAG, "start service");
+	startService(new Intent(this, KillerService.class));
     }
 
     private void refresh() {

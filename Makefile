@@ -1,6 +1,6 @@
 PACKAGE=me.cos.taskmanager
 ACTIVITY=Dashboard
 PROJECT=TaskManager
-DEVICE=G2D
+DEVICE=EMU_5556
 
 include makefile.inc
