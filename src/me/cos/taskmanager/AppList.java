@@ -1,6 +1,8 @@
 package me.cos.taskmanager;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -10,6 +12,9 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MenuInflater;
 import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.AbsListView;
@@ -28,15 +33,17 @@ public class AppList extends Activity {
     private ListView mListView;
     private MyListAdapter mAdapter;
     private Map<String, ApplicationInfo> mKillList = new HashMap<String, ApplicationInfo>();
+    private Set<String> mIgnoreList = new HashSet<String>();
     private Handler mHandler = new Handler();
     private SharedPreferences mPreferences;
 
     public static final String PREFERENCE_NAME = "me.cos.taskmanager";
     public static final String PREFERENCE_KILLLIST = "kill_list";
+    public static final String PREFERENCE_IGNORELIST = "ignore_list";
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.app_killer);
+        setContentView(R.layout.app_list);
 
 	mPreferences = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE);
 
@@ -79,6 +86,25 @@ public class AppList extends Activity {
 	startService(new Intent(this, KillerService.class));
     }
 
+    @Override public boolean onCreateOptionsMenu(Menu menu) {
+	MenuInflater inflater = getMenuInflater();
+	inflater.inflate(R.menu.app_list_menu, menu);
+	return true;
+    }
+
+    @Override public boolean onOptionsItemSelected(MenuItem item) {
+	switch (item.getItemId()) {
+	case R.id.kill:
+	    onKill();
+	    return true;
+	case R.id.ignore:
+	    onIgnore();
+	    return true;
+	default:
+	    return super.onOptionsItemSelected(item);
+	}
+    }
+
     private void refresh() {
 	mAdapter.clear();
 
@@ -86,6 +112,10 @@ public class AppList extends Activity {
         
 	for (RunningAppProcessInfo info : procList) {
 	    for (String pkgName: info.pkgList) {
+		if (mIgnoreList.contains(pkgName)) {
+		    continue;
+		}
+
 		if (! mAdapter.hasPackage(pkgName)) {
 		    try {
 			mAdapter.add(mPackageManager.getApplicationInfo(pkgName, PackageManager.GET_UNINSTALLED_PACKAGES));
@@ -112,28 +142,69 @@ public class AppList extends Activity {
     }
 
     public void onKill(View view) {
+	onKill();
+    }
+
+    private void updateMapAccordingToSelected(Map<String, ApplicationInfo> map) {
 	SparseBooleanArray checkedPositions = mListView.getCheckedItemPositions();
+
 	for (int i=0; i<checkedPositions.size(); i++) {
 	    ApplicationInfo item = (ApplicationInfo) mAdapter.getItem(checkedPositions.keyAt(i));
 	    if (checkedPositions.valueAt(i)) {
-		mKillList.put(item.packageName, item);
+		map.put(item.packageName, item);
 	    }else{
-		Log.d(Config.TAG, "Need to remove " + item.packageName);
-		mKillList.remove(item.packageName);
+		map.remove(item.packageName);
 	    }
 	}
+    }
+
+    private void updateSetAccordingToSelected(Set<String> set) {
+	SparseBooleanArray checkedPositions = mListView.getCheckedItemPositions();
+
+	for (int i=0; i<checkedPositions.size(); i++) {
+	    ApplicationInfo item = (ApplicationInfo) mAdapter.getItem(checkedPositions.keyAt(i));
+	    if (checkedPositions.valueAt(i)) {
+		set.add(item.packageName);
+	    }else{
+		set.remove(item.packageName);
+	    }
+	}
+    }
+
+    private void saveMap(String name, Map<String, ApplicationInfo> map) {
+	String listString = "";
+	for (String packageName : map.keySet()) {
+	    listString += packageName + ";";
+	}
+	mPreferences.edit().putString(name, listString).commit();
+    }
+
+    private void onKill() {
+	updateMapAccordingToSelected(mKillList);
+	saveMap(PREFERENCE_KILLLIST, mKillList);
 
 	doKill();
     }
 
+    private void onIgnore() {
+	boolean modified = false;
+	updateSetAccordingToSelected(mIgnoreList);
+	for (String name : mIgnoreList) {
+	    mKillList.remove(name);
+	    modified = true;
+	}
+	if (modified) {
+	    saveMap(PREFERENCE_KILLLIST, mKillList);
+	}
+
+	refresh();
+    }
+
     private void doKill() {
-	String killListString = "";
 	for (String packageName : mKillList.keySet()) {
 	    Log.d(Config.TAG, "manual kill " + packageName);
 	    mActivityManager.killBackgroundProcesses(packageName);
-	    killListString += packageName + ";";
 	}
-	mPreferences.edit().putString(PREFERENCE_KILLLIST, killListString).commit();
 
 	mHandler.post(new Runnable() {
 		@Override public void run() {
@@ -166,7 +237,12 @@ public class AppList extends Activity {
     		view = (AppItemView) getLayoutInflater().inflate(R.layout.app_item, parent, false); /* XXX: do not attach to root */
     	    }
 	    CharSequence label = item.loadLabel(mPackageManager);
-    	    view.setText(label);
+	    Log.d(Config.TAG, "item=" + item + ", name=" + item.packageName);
+	    if (label == null) {
+		view.setText(label);
+	    }else{
+		view.setText(item.packageName);
+	    }
 
     	    return view;
     	}
