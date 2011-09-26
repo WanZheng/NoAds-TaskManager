@@ -2,6 +2,7 @@ package me.cos.taskmanager;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Set;
@@ -34,8 +35,8 @@ public class AppList extends Activity {
     private ListView mListView;
     private AppInfoCache mAppInfoCache;
     private AppInfoAdapter mAdapter;
-    private Set<String> mKillList = new HashSet<String>();
-    private Set<String> mIgnoreList = new HashSet<String>();
+    private Set<String> mKillList;
+    private Set<String> mIgnoreList;
     private Handler mHandler = new Handler();
     private SharedPreferences mPreferences;
 
@@ -74,14 +75,10 @@ public class AppList extends Activity {
 	stopService(new Intent(this, KillerService.class));
 
 	List<String> list = restoreStringList(mPreferences, Config.PREFERENCE_KILLLIST);
-	if (list != null) {
-	    mKillList = new HashSet<String>(list);
-	}
+	mKillList = new HashSet<String>(list);
 	
 	list = restoreStringList(mPreferences, Config.PREFERENCE_IGNORELIST);
-	if (list != null) {
-	    mIgnoreList = new HashSet<String>(list);
-	}
+	mIgnoreList = new HashSet<String>(list);
 
 	refresh();
     }
@@ -106,6 +103,13 @@ public class AppList extends Activity {
 	case R.id.ignore:
 	    onIgnore();
 	    return true;
+	case R.id.ignore_list:
+	    Intent intent = new Intent(this, IgnoreList.class);
+	    startActivity(intent);
+	    return true;
+	case R.id.refresh:
+	    refresh();
+	    return true;
 	default:
 	    return super.onOptionsItemSelected(item);
 	}
@@ -117,7 +121,7 @@ public class AppList extends Activity {
 
 	String listString = preference.getString(name, "");
 	if (listString.length() == 0) {
-	    return null;
+	    return (new ArrayList<String>());
 	}
 	return Arrays.asList(listString.split(";"));
     }
@@ -161,7 +165,7 @@ public class AppList extends Activity {
 	}
     }
 
-    private void printList(String title, Collection<String> c) {
+    public static void printList(String title, Collection<String> c) {
 	Log.d(Config.TAG, "== " + title + " ==");
 	for (String s : c) {
 	    Log.d(Config.TAG, s);

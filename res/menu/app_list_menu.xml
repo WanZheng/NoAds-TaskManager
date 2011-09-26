@@ -4,4 +4,8 @@
 	android:title="@string/kill_app" />
   <item android:id="@+id/ignore"
 	android:title="@string/ignore_app" />
+  <item android:id="@+id/ignore_list"
+	android:title="@string/ignore_list" />
+  <item android:id="@+id/refresh"
+	android:title="@string/refresh" />
 </menu>

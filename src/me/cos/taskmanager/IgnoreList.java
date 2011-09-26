@@ -19,7 +19,7 @@ public class IgnoreList extends Activity {
     private PackageManager mPackageManager;
     private AppInfoCache mAppInfoCache;
     private AppInfoAdapter mAdapter;
-    private Set<String> mIgnoreList = new HashSet<String>();
+    private Set<String> mIgnoreList;
     private SharedPreferences mPreferences;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -49,9 +49,7 @@ public class IgnoreList extends Activity {
 	super.onResume();
 
 	List<String> list = AppList.restoreStringList(mPreferences, Config.PREFERENCE_IGNORELIST);
-	if (list != null) {
-	    mIgnoreList = new HashSet<String>(list);
-	}
+	mIgnoreList = new HashSet<String>(list);
 
 	refresh();
     }

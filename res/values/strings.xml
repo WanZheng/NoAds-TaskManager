@@ -4,4 +4,6 @@
     <string name="app_name">task-manager</string>
     <string name="kill_app">kill</string>
     <string name="ignore_app">ignore</string>
+    <string name="ignore_list">ignore list</string>
+    <string name="refresh">refresh</string>
 </resources>
