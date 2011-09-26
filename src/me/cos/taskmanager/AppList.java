@@ -39,15 +39,11 @@ public class AppList extends Activity {
     private Handler mHandler = new Handler();
     private SharedPreferences mPreferences;
 
-    public static final String PREFERENCE_NAME = "me.cos.taskmanager";
-    public static final String PREFERENCE_KILLLIST = "kill_list";
-    public static final String PREFERENCE_IGNORELIST = "ignore_list";
-
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.app_list);
 
-	mPreferences = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE);
+	mPreferences = getSharedPreferences(Config.PREFERENCE_NAME, Context.MODE_PRIVATE);
 	mActivityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 	mPackageManager = getPackageManager();
 	mAppInfoCache = new AppInfoCache(mPackageManager);
@@ -77,12 +73,12 @@ public class AppList extends Activity {
 
 	stopService(new Intent(this, KillerService.class));
 
-	List<String> list = restoreStringList(mPreferences, PREFERENCE_KILLLIST);
+	List<String> list = restoreStringList(mPreferences, Config.PREFERENCE_KILLLIST);
 	if (list != null) {
 	    mKillList = new HashSet<String>(list);
 	}
 	
-	list = restoreStringList(mPreferences, PREFERENCE_IGNORELIST);
+	list = restoreStringList(mPreferences, Config.PREFERENCE_IGNORELIST);
 	if (list != null) {
 	    mIgnoreList = new HashSet<String>(list);
 	}
@@ -117,7 +113,7 @@ public class AppList extends Activity {
 
     public static List<String> restoreStringList(SharedPreferences preference, String name) {
 	// level-11
-	// Set<String> killList = mPreferences.getStringSet(AppKiller.PREFERENCE_KILLLIST, null);
+	// Set<String> killList = mPreferences.getStringSet(Config.PREFERENCE_KILLLIST, null);
 
 	String listString = preference.getString(name, "");
 	if (listString.length() == 0) {
@@ -126,7 +122,7 @@ public class AppList extends Activity {
 	return Arrays.asList(listString.split(";"));
     }
 
-    public void saveStrings(SharedPreferences preference, String name, Collection<String> collection) {
+    public static void saveStrings(SharedPreferences preference, String name, Collection<String> collection) {
 	String listString = "";
 	for (String s : collection) {
 	    listString += s + ";";
@@ -192,7 +188,7 @@ public class AppList extends Activity {
 
     private void onKill() {
 	updateCollectionAccordingToSelected(mKillList);
-	saveStrings(mPreferences, PREFERENCE_KILLLIST, mKillList);
+	saveStrings(mPreferences, Config.PREFERENCE_KILLLIST, mKillList);
 
 	doKill();
     }
@@ -200,14 +196,14 @@ public class AppList extends Activity {
     private void onIgnore() {
 	boolean modified = false;
 	updateCollectionAccordingToSelected(mIgnoreList);
-	saveStrings(mPreferences, PREFERENCE_IGNORELIST, mIgnoreList);
+	saveStrings(mPreferences, Config.PREFERENCE_IGNORELIST, mIgnoreList);
 
 	for (String name : mIgnoreList) {
 	    mKillList.remove(name);
 	    modified = true;
 	}
 	if (modified) {
-	    saveStrings(mPreferences, PREFERENCE_KILLLIST, mKillList);
+	    saveStrings(mPreferences, Config.PREFERENCE_KILLLIST, mKillList);
 	}
 
 	refresh();

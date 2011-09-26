@@ -9,7 +9,8 @@ public class Dashboard extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.dashboard);
 
-	Intent intent = new Intent(this, AppList.class);
+	// Intent intent = new Intent(this, AppList.class);
+	Intent intent = new Intent(this, IgnoreList.class);
 	startActivity(intent);
     }
 }
